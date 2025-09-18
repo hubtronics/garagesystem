@@ -1,0 +1,116 @@
+{% extends 'dashboard.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Vehicle</h2>
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Customer</label>
+            <select name="customer_id" class="form-control" required>
+                <option value="">Select Customer</option>
+                {% for c in customers %}
+                <option value="{{ c.id }}">{{ c.name }} ({{ c.phone }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Vehicle Make</label>
+            <select name="name" id="vehicle-make" class="form-control" required>
+                <option value="">Select Make</option>
+                <option value="Toyota">Toyota</option>
+                <option value="Nissan">Nissan</option>
+                <option value="Mazda">Mazda</option>
+                <option value="Honda">Honda</option>
+                <option value="Mitsubishi">Mitsubishi</option>
+                <option value="Subaru">Subaru</option>
+                <option value="Isuzu">Isuzu</option>
+                <option value="Suzuki">Suzuki</option>
+                <option value="Volkswagen">Volkswagen</option>
+                <option value="Porsche">Porsche</option>
+                <option value="Mercedes-Benz">Mercedes-Benz</option>
+                <option value="BMW">BMW</option>
+                <option value="Ford">Ford</option>
+                <option value="Peugeot">Peugeot</option>
+                <option value="Hyundai">Hyundai</option>
+                <option value="Kia">Kia</option>
+                <option value="Chevrolet">Chevrolet</option>
+                <option value="Land Rover">Land Rover</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Plate Number</label>
+            <input type="text" name="plate" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Vehicle Model</label>
+            <select name="model" id="vehicle-model" class="form-control" required>
+                <option value="">Select Model</option>
+            </select>
+        </div>
+        <script>
+        const makeToModels = {
+            'Toyota': ['Corolla', 'Probox', 'Fielder', 'Hilux', 'Land Cruiser', 'Premio', 'Axio', 'Vitz', 'RAV4', 'Wish'],
+            'Nissan': ['Note', 'X-Trail', 'Navara', 'March', 'Juke', 'Tiida', 'Dualis', 'Sunny'],
+            'Mazda': ['Demio', 'Atenza', 'Axela', 'CX-5', 'CX-3', 'Bongo'],
+            'Honda': ['Fit', 'Civic', 'CR-V', 'Vezel', 'Stream', 'Freed'],
+            'Mitsubishi': ['Lancer', 'Outlander', 'Pajero', 'Canter', 'Fuso'],
+            'Subaru': ['Impreza', 'Forester', 'Legacy', 'Outback', 'XV'],
+            'Isuzu': ['D-Max', 'NPR', 'NQR', 'Elf'],
+            'Suzuki': ['Swift', 'Alto', 'Escudo', 'Wagon R'],
+            'Volkswagen': ['Golf', 'Polo', 'Passat', 'Tiguan', 'Touareg', 'Jetta', 'Transporter', 'Amarok', 'Beetle', 'Sharan', 'Touran', 'Caddy'],
+            'Porsche': ['Cayenne', 'Macan', 'Panamera', '911', 'Boxster', 'Taycan', '718', 'Cayman'],
+            'Mercedes-Benz': ['C-Class', 'E-Class', 'Actros', 'Sprinter'],
+            'BMW': ['3 Series', '5 Series', 'X3', 'X5'],
+            'Ford': ['Ranger', 'Everest', 'Focus', 'Fiesta'],
+            'Peugeot': ['206', '207', '308', 'Partner'],
+            'Hyundai': ['Tucson', 'Santa Fe', 'Elantra', 'Accent'],
+            'Kia': ['Sportage', 'Sorento', 'Rio', 'Cerato'],
+            'Chevrolet': ['Optra', 'Trailblazer', 'Aveo'],
+            'Land Rover': ['Discovery', 'Range Rover', 'Defender'],
+            'Other': ['Other']
+        };
+        document.getElementById('vehicle-make').addEventListener('change', function() {
+            const make = this.value;
+            const modelSelect = document.getElementById('vehicle-model');
+            modelSelect.innerHTML = '<option value="">Select Model</option>';
+            if (makeToModels[make]) {
+                makeToModels[make].forEach(function(model) {
+                    const opt = document.createElement('option');
+                    opt.value = model;
+                    opt.textContent = model;
+                    modelSelect.appendChild(opt);
+                });
+            }
+        });
+        </script>
+        <div class="mb-3">
+            <label class="form-label">VIN Number</label>
+            <input type="text" name="vin_number" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select name="type" class="form-control" required>
+                <option value="">Select Type</option>
+                <option value="electrical">Electrical</option>
+                <option value="mechanical">Mechanical</option>
+                <option value="service">Service</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Date Booked</label>
+            <input type="date" name="date_booked" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Technician</label>
+            <input type="text" name="technician" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">History/Notes</label>
+            <textarea name="history" class="form-control"></textarea>
+        </div>
+        <button type="submit" class="btn btn-success">Add</button>
+        <a href="{{ url_for('vehicles') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

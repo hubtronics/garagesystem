@@ -1,0 +1,60 @@
+{% extends 'dashboard.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Vehicle</h2>
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Customer</label>
+            <select name="customer_id" class="form-control" required>
+                <option value="">Select Customer</option>
+                {% for c in customers %}
+                <option value="{{ c.id }}" {% if vehicle.customer_id == c.id %}selected{% endif %}>{{ c.name }} ({{ c.phone }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Vehicle Name</label>
+            <input type="text" name="name" class="form-control" value="{{ vehicle.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Plate</label>
+            <input type="text" name="plate" class="form-control" value="{{ vehicle.plate }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Model</label>
+            <input type="text" name="model" class="form-control" value="{{ vehicle.model }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">VIN Number</label>
+            <input type="text" name="vin_number" class="form-control" value="{{ vehicle.vin_number }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select name="type" class="form-control" required>
+                <option value="">Select Type</option>
+                <option value="electrical" {% if vehicle.type == 'electrical' %}selected{% endif %}>Electrical</option>
+                <option value="mechanical" {% if vehicle.type == 'mechanical' %}selected{% endif %}>Mechanical</option>
+                <option value="service" {% if vehicle.type == 'service' %}selected{% endif %}>Service</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Status</label>
+            <input type="text" name="status" class="form-control" value="{{ vehicle.status }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Date Booked</label>
+            <input type="date" name="date_booked" class="form-control" value="{{ vehicle.date_booked }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Technician</label>
+            <input type="text" name="technician" class="form-control" value="{{ vehicle.technician }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">History/Notes</label>
+            <textarea name="history" class="form-control">{{ vehicle.history }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{{ url_for('vehicles') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

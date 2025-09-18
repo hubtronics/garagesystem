@@ -1,0 +1,66 @@
+{% extends 'dashboard.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Vehicle Details</h2>
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">{{ vehicle.name }} ({{ vehicle.plate }})</h5>
+            <p><strong>Model:</strong> {{ vehicle.model }}</p>
+            <p><strong>VIN Number:</strong> {{ vehicle.vin_number }}</p>
+            <p><strong>Type:</strong> {{ vehicle.type|capitalize }}</p>
+            <p><strong>Status:</strong> {{ vehicle.status }}</p>
+            <p><strong>Date Booked:</strong> {{ vehicle.date_booked }}</p>
+            <p><strong>Technician:</strong> {{ vehicle.technician }}</p>
+            <p><strong>Customer:</strong> {% if vehicle.customer %}{{ vehicle.customer.name }} ({{ vehicle.customer.phone }}){% else %}None{% endif %}</p>
+            <p><strong>History/Notes:</strong><br>{{ vehicle.history|default('No history yet.') }}</p>
+            <a href="{{ url_for('edit_vehicle', vehicle_id=vehicle.id) }}" class="btn btn-primary">Edit</a>
+            <a href="{{ url_for('vehicles') }}" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+    <div class="mb-3">
+        <a href="{{ url_for('vehicles') }}" class="btn btn-secondary">Back to Vehicles</a>
+        <a href="{{ url_for('vehicle_report', vehicle_id=vehicle.id) }}" class="btn btn-info">Generate Report</a>
+    </div>
+    <h4>Add Record</h4>
+    <form method="post" class="mb-4">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="col-md-5">
+                <input type="text" name="description" class="form-control" placeholder="Description of work/visit" required>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="technician" class="form-control" placeholder="Technician (optional)">
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-success">Add</button>
+            </div>
+        </div>
+    </form>
+    <h4>Visit & Service History</h4>
+    {% if history_entries %}
+    <ul class="list-group mb-4">
+        {% for h in history_entries %}
+        <li class="list-group-item">
+            <strong>Date:</strong> {{ h.date }}<br>
+            <strong>Description:</strong> {{ h.description }}<br>
+            <strong>Technician:</strong> {{ h.technician|default('N/A') }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No visit/service history for this vehicle yet.</p>
+    {% endif %}
+    <h4>Quotes</h4>
+    {% if quotes %}
+    <ul>
+        {% for q in quotes %}
+        <li>Quote #{{ q.id }} - <a href="#">View</a></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No quotes for this vehicle yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
