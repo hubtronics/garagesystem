@@ -117,7 +117,15 @@ def dashboard():
 @app.route('/vehicles')
 @login_required
 def vehicles():
-    vehicles = Vehicle.query.all()
+    q = request.args.get('q', '').strip()
+    if q:
+        vehicles = Vehicle.query.filter(
+            (Vehicle.plate.ilike(f'%{q}%')) |
+            (Vehicle.model.ilike(f'%{q}%')) |
+            (Vehicle.name.ilike(f'%{q}%'))
+        ).all()
+    else:
+        vehicles = Vehicle.query.all()
     return render_template('vehicles.html', vehicles=vehicles)
 
 
@@ -219,7 +227,15 @@ def delete_vehicle(vehicle_id):
 @app.route('/customers')
 @login_required
 def customers():
-    customers = Customer.query.all()
+    q = request.args.get('q', '').strip()
+    if q:
+        customers = Customer.query.filter(
+            (Customer.name.ilike(f'%{q}%')) |
+            (Customer.phone.ilike(f'%{q}%')) |
+            (Customer.email.ilike(f'%{q}%'))
+        ).all()
+    else:
+        customers = Customer.query.all()
     return render_template('customers.html', customers=customers)
 
 @app.route('/customers/add', methods=['GET', 'POST'])
