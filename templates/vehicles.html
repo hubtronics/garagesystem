@@ -33,10 +33,12 @@
                     <td>{{ v.date_booked }}</td>
                     <td>
                         <a href="{{ url_for('vehicle_detail', vehicle_id=v.id) }}" class="btn btn-info btn-sm">Details</a>
-                        <a href="{{ url_for('edit_vehicle', vehicle_id=v.id) }}" class="btn btn-primary btn-sm">Edit</a>
-                        <form action="{{ url_for('delete_vehicle', vehicle_id=v.id) }}" method="post" style="display:inline;">
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this vehicle?');">Delete</button>
-                        </form>
+                        {% if session['username'] == 'admin' %}
+                            <a href="{{ url_for('edit_vehicle', vehicle_id=v.id) }}" class="btn btn-primary btn-sm">Edit</a>
+                            <form action="{{ url_for('delete_vehicle', vehicle_id=v.id) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this vehicle?');">Delete</button>
+                            </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

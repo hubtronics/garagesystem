@@ -7,21 +7,42 @@
             <label class="form-label">Visit Notes / What Client Came For</label>
             <input type="text" name="notes" class="form-control" required>
         </div>
+        <div class="mb-3">
+            <label for="visit_category" class="form-label">Visit Category</label>
+            <select class="form-control" id="visit_category" name="visit_category" required>
+                <option value="Mechanical">Mechanical</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Diagnosis">Diagnosis</option>
+                <option value="Battery">Battery</option>
+                <option value="Suspension">Suspension</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
         <h5>Service Items</h5>
         <div id="items">
             <div class="row mb-2">
-                <div class="col-5">
+                <div class="col-3">
                     <input type="text" name="item_name" class="form-control" placeholder="Item name (e.g. Air Filter)">
                 </div>
-                <div class="col-3">
+                <div class="col-2">
+                    <input type="text" name="part_number" class="form-control" placeholder="Part Number (optional)">
+                </div>
+                <div class="col-2">
                     <input type="number" name="quantity" class="form-control" placeholder="Qty" min="1" value="1">
                 </div>
-                <div class="col-4">
+                <div class="col-2">
                     <input type="number" name="price" class="form-control" placeholder="Price" min="0" step="0.01">
+                </div>
+                <div class="col-3">
+                    <input type="number" name="labour" class="form-control" placeholder="Labour" min="0" step="0.01" value="0">
                 </div>
             </div>
         </div>
         <button type="button" class="btn btn-secondary mb-3" onclick="addItem()">Add Another Item</button>
+        <div class="mb-3">
+            <label class="form-label">Overall Labour Charge (optional)</label>
+            <input type="number" name="visit_labour" class="form-control" min="0" step="0.01" value="0">
+        </div>
         <br>
         <button type="submit" class="btn btn-primary">Save Visit</button>
         <a href="{{ url_for('vehicle_detail', vehicle_id=vehicle.id) }}" class="btn btn-secondary">Cancel</a>
@@ -33,14 +54,20 @@ function addItem() {
     let row = document.createElement('div');
     row.className = 'row mb-2';
     row.innerHTML = `
-        <div class="col-5">
+        <div class="col-3">
             <input type="text" name="item_name" class="form-control" placeholder="Item name (e.g. Oil Filter)">
         </div>
-        <div class="col-3">
+        <div class="col-2">
+            <input type="text" name="part_number" class="form-control" placeholder="Part Number (optional)">
+        </div>
+        <div class="col-2">
             <input type="number" name="quantity" class="form-control" placeholder="Qty" min="1" value="1">
         </div>
-        <div class="col-4">
+        <div class="col-2">
             <input type="number" name="price" class="form-control" placeholder="Price" min="0" step="0.01">
+        </div>
+        <div class="col-3">
+            <input type="number" name="labour" class="form-control" placeholder="Labour" min="0" step="0.01" value="0">
         </div>
     `;
     itemsDiv.appendChild(row);

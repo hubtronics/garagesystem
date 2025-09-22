@@ -7,12 +7,14 @@ import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from datetime import datetime
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///garage.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # VehicleHistory model
 class VehicleHistory(db.Model):
@@ -30,6 +32,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+    role = db.Column(db.String(20), default='user')  # 'admin' or 'user'
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -64,7 +67,7 @@ class ServiceVisit(db.Model):
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     notes = db.Column(db.String(255))
-    visit_type = db.Column(db.String(100))  # e.g., Service, Battery Change, etc.
+    visit_category = db.Column(db.String(100))  # instead of visit_type
     labour = db.Column(db.Float, default=0.0)
     items = db.relationship('ServiceItem', backref='visit', lazy=True)
 
@@ -72,8 +75,10 @@ class ServiceItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     visit_id = db.Column(db.Integer, db.ForeignKey('service_visit.id'), nullable=False)
     item_name = db.Column(db.String(100), nullable=False)
+    part_number = db.Column(db.String(100), nullable=True)  # <-- Add this line
     quantity = db.Column(db.Integer, nullable=False, default=1)
     price = db.Column(db.Float, nullable=False, default=0.0)
+    labour = db.Column(db.Float, nullable=False, default=0.0)
 
 # Create default admin and initialize DB at startup
 def create_admin():
@@ -126,7 +131,9 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return render_template('dashboard.html')
+    vehicle_count = Vehicle.query.count()
+    customer_count = Customer.query.count()
+    return render_template('dashboard.html', vehicle_count=vehicle_count, customer_count=customer_count)
 
 # VEHICLE CRUD
 
@@ -162,17 +169,17 @@ def add_vehicle():
         return redirect(url_for('add_customer'))
     if request.method == 'POST':
         customer_id = request.form['customer_id']
-        name = request.form['name']
+        make = request.form['name']
+        custom_make = request.form.get('custom_make', '').strip()
+        name = custom_make if make == 'custom' and custom_make else make
         plate = request.form['plate']
         model = request.form['model']
         vin_number = request.form['vin_number']
         type_ = request.form['type']
-        # status field removed from form, set a default value
-        status = 'Active'  # or any default you prefer
+        status = 'Active'
         date_booked = request.form['date_booked']
         technician = request.form['technician']
         history = request.form.get('history', '')
-        # Check for duplicate plate
         if Vehicle.query.filter_by(plate=plate).first():
             flash('A vehicle with this plate number already exists.', 'danger')
             return render_template('add_vehicle.html', customers=customers)
@@ -197,6 +204,10 @@ def add_vehicle():
 @app.route('/vehicles/edit/<int:vehicle_id>', methods=['GET', 'POST'])
 @login_required
 def edit_vehicle(vehicle_id):
+    user = User.query.get(session['user_id'])
+    if user.role != 'admin':
+        flash('Only admin can edit vehicles.', 'danger')
+        return redirect(url_for('vehicles'))
     v = Vehicle.query.get_or_404(vehicle_id)
     customers = Customer.query.all()
     if not customers:
@@ -221,6 +232,10 @@ def edit_vehicle(vehicle_id):
 @app.route('/vehicles/delete/<int:vehicle_id>', methods=['POST'])
 @login_required
 def delete_vehicle(vehicle_id):
+    user = User.query.get(session['user_id'])
+    if user.role != 'admin':
+        flash('Only admin can delete vehicles.', 'danger')
+        return redirect(url_for('vehicles'))
     v = Vehicle.query.get_or_404(vehicle_id)
     db.session.delete(v)
     db.session.commit()
@@ -272,6 +287,10 @@ def edit_customer(customer_id):
 @app.route('/customers/delete/<int:customer_id>', methods=['POST'])
 @login_required
 def delete_customer(customer_id):
+    user = User.query.get(session['user_id'])
+    if user.role != 'admin':
+        flash('Only admin can delete customers.', 'danger')
+        return redirect(url_for('customers'))
     c = Customer.query.get_or_404(customer_id)
     db.session.delete(c)
     db.session.commit()
@@ -287,12 +306,14 @@ def vehicle_report(vehicle_id):
     from reportlab.pdfgen import canvas
     from reportlab.lib.utils import ImageReader
     import os
+
     v = Vehicle.query.get_or_404(vehicle_id)
-    history_entries = VehicleHistory.query.filter_by(vehicle_id=vehicle_id).order_by(VehicleHistory.date.desc()).all()
+    visits = ServiceVisit.query.filter_by(vehicle_id=vehicle_id).order_by(ServiceVisit.date.desc()).all()
     buffer = io.BytesIO()
     p = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
     y = height - 40
+
     # Company logo and details
     logo_path = os.path.join(current_app.root_path, 'static', 'powertune.jpg')
     logo_height = 50
@@ -305,8 +326,10 @@ def vehicle_report(vehicle_id):
     p.setFont('Helvetica', 10)
     p.drawString(160, y-38, "Nairobi, Kenya | Tel: 0712 345678 | Email: info@powertune.co.ke")
     y -= 70
+
+    # Vehicle and customer details
     p.setFont('Helvetica-Bold', 15)
-    p.drawString(40, y, f"Vehicle Service Report")
+    p.drawString(40, y, f"Vehicle Comprehensive Report")
     y -= 20
     p.setFont('Helvetica', 12)
     p.drawString(40, y, f"Vehicle: {v.name} ({v.plate})")
@@ -314,7 +337,15 @@ def vehicle_report(vehicle_id):
     p.drawString(40, y, f"Model: {v.model}")
     y -= 16
     p.drawString(40, y, f"VIN: {v.vin_number or '-'}")
-    y -= 28  # Add extra space before customer details
+    y -= 16
+    p.drawString(40, y, f"Visit Category: {v.type or '-'}")
+    y -= 16
+    p.drawString(40, y, f"Status: {v.status}")
+    y -= 16
+    p.drawString(40, y, f"Date Booked: {v.date_booked or '-'}")
+    y -= 16
+    p.drawString(40, y, f"Technician: {v.technician or '-'}")
+    y -= 28
 
     if v.customer:
         p.drawString(40, y, "Customer Details:")
@@ -328,26 +359,39 @@ def vehicle_report(vehicle_id):
         y -= 16
         p.setFont('Helvetica', 12)
     y -= 10
+
+    # Service Visits
     p.setFont('Helvetica-Bold', 13)
     p.drawString(40, y, "Visit & Service History:")
     y -= 18
     p.setFont('Helvetica', 11)
-    if not history_entries:
-        p.drawString(40, y, "No history records found.")
+    if not visits:
+        p.drawString(40, y, "No service visits found.")
     else:
-        for idx, h in enumerate(history_entries, 1):
-            if y < 60:
+        for idx, visit in enumerate(visits, 1):
+            if y < 100:
                 p.showPage()
                 y = height - 40
             p.setFont('Helvetica-Bold', 11)
-            ts = h.timestamp.strftime('%Y-%m-%d %H:%M') if hasattr(h, 'timestamp') and h.timestamp else '-'
-            p.drawString(50, y, f"{idx}. Date: {h.date} | Time: {ts} | Technician: {h.technician or '-'}")
+            p.drawString(50, y, f"{idx}. Date: {visit.date.strftime('%Y-%m-%d %H:%M')} | Category: {visit.visit_category or '-'} | Notes: {visit.notes or '-'}")
             y -= 14
             p.setFont('Helvetica', 11)
-            p.drawString(70, y, f"Description: {h.description}")
-            y -= 22
+            items = visit.items
+            parts_total = sum(item.quantity * item.price for item in items)
+            items_labour_total = sum(item.labour or 0 for item in items)
+            visit_labour = visit.labour or 0
+            grand_total = parts_total + items_labour_total + visit_labour
+            if items:
+                p.drawString(70, y, "Items:")
+                y -= 14
+                for item in items:
+                    p.drawString(80, y, f"- {item.item_name} | Part#: {item.part_number or '-'} | Qty: {item.quantity} | Price: {item.price} | Labour: {item.labour or 0}")
+                    y -= 12
+            p.drawString(80, y, f"Parts Total: {parts_total} | Labour (Items): {items_labour_total} | Labour (Visit): {visit_labour} | Grand Total: {grand_total}")
+            y -= 18
+
     p.setFont('Helvetica-Oblique', 9)
-    p.drawString(40, 30, "Generated by Powertune Garage System - {date}".format(date=''))
+    p.drawString(40, 30, "Generated by Powertune Garage System - {date}".format(date=datetime.now().strftime('%Y-%m-%d %H:%M')))
     p.save()
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name=f'vehicle_{v.plate}_report.pdf', mimetype='application/pdf')
@@ -358,21 +402,25 @@ def add_visit(vehicle_id):
     v = Vehicle.query.get_or_404(vehicle_id)
     if request.method == 'POST':
         notes = request.form['notes']
-        items = []
-        # Collect dynamic items from the form
+        visit_category = request.form['visit_category']
         item_names = request.form.getlist('item_name')
+        part_numbers = request.form.getlist('part_number')
         quantities = request.form.getlist('quantity')
         prices = request.form.getlist('price')
-        visit = ServiceVisit(vehicle_id=vehicle_id, notes=notes)
+        labours = request.form.getlist('labour')
+        visit_labour = float(request.form.get('visit_labour', 0))
+        visit = ServiceVisit(vehicle_id=vehicle_id, notes=notes, visit_category=visit_category, labour=visit_labour)
         db.session.add(visit)
-        db.session.flush()  # Get visit.id before commit
-        for name, qty, price in zip(item_names, quantities, prices):
+        db.session.flush()
+        for name, part_no, qty, price, labour in zip(item_names, part_numbers, quantities, prices, labours):
             if name.strip():
                 item = ServiceItem(
                     visit_id=visit.id,
                     item_name=name.strip(),
+                    part_number=part_no.strip() if part_no else None,
                     quantity=int(qty) if qty else 1,
-                    price=float(price) if price else 0.0
+                    price=float(price) if price else 0.0,
+                    labour=float(labour) if labour else 0.0
                 )
                 db.session.add(item)
         db.session.commit()
@@ -390,8 +438,9 @@ def print_visit(visit_id):
 
     # Calculate totals
     parts_total = sum(item.quantity * item.price for item in items)
-    labour = visit.labour or 0
-    grand_total = parts_total + labour
+    items_labour_total = sum(item.labour or 0 for item in items)
+    visit_labour = visit.labour or 0
+    grand_total = parts_total + items_labour_total + visit_labour
 
     return render_template(
         'print_visit.html',
@@ -400,9 +449,52 @@ def print_visit(visit_id):
         customer=customer,
         items=items,
         parts_total=parts_total,
-        labour=labour,
+        items_labour_total=items_labour_total,
+        visit_labour=visit_labour,
         grand_total=grand_total
     )
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current_password = request.form['current_password']
+        new_password = request.form['new_password']
+        confirm_password = request.form['confirm_password']
+        user = User.query.filter_by(username=session.get('username')).first()
+        if not user or not check_password_hash(user.password_hash, current_password):
+            flash('Current password is incorrect.', 'danger')
+        elif new_password != confirm_password:
+            flash('New passwords do not match.', 'danger')
+        else:
+            user.password_hash = generate_password_hash(new_password)
+            db.session.commit()
+            flash('Password changed successfully.', 'success')
+            return redirect(url_for('dashboard'))
+    return render_template('change_password.html')
+
+@app.route('/users/add', methods=['GET', 'POST'])
+@login_required
+def add_user():
+    # Only allow admin
+    user = User.query.get(session['user_id'])
+    if user.role != 'admin':
+        flash('Only admin can add users.', 'danger')
+        return redirect(url_for('dashboard'))
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        role = request.form['role']
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists.', 'danger')
+        else:
+            new_user = User(username=username, role=role)
+            new_user.set_password(password)
+            db.session.add(new_user)
+            db.session.commit()
+            flash('User created!', 'success')
+            return redirect(url_for('dashboard'))
+    return render_template('add_user.html')
 
 if __name__ == '__main__':
     create_admin()

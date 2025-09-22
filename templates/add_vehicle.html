@@ -14,7 +14,7 @@
         </div>
         <div class="mb-3">
             <label class="form-label">Vehicle Make</label>
-            <select name="name" id="vehicle-make" class="form-control" required>
+            <select name="name" id="vehicle-make" class="form-control mb-2" onchange="toggleCustomMake()" required>
                 <option value="">Select Make</option>
                 <option value="Toyota">Toyota</option>
                 <option value="Nissan">Nissan</option>
@@ -34,20 +34,24 @@
                 <option value="Kia">Kia</option>
                 <option value="Chevrolet">Chevrolet</option>
                 <option value="Land Rover">Land Rover</option>
-                <option value="Other">Other</option>
+                <option value="custom">Other (Enter Manually)</option>
             </select>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Plate Number</label>
-            <input type="text" name="plate" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Vehicle Model</label>
-            <select name="model" id="vehicle-model" class="form-control" required>
-                <option value="">Select Model</option>
-            </select>
+            <input type="text" name="custom_make" id="custom-make" class="form-control" placeholder="Enter Make" style="display:none;">
         </div>
         <script>
+        function toggleCustomMake() {
+            var makeSelect = document.getElementById('vehicle-make');
+            var customMake = document.getElementById('custom-make');
+            if (makeSelect.value === 'custom') {
+                customMake.style.display = 'block';
+                customMake.required = true;
+                makeSelect.required = false;
+            } else {
+                customMake.style.display = 'none';
+                customMake.required = false;
+                makeSelect.required = true;
+            }
+        }
         const makeToModels = {
             'Toyota': ['Corolla', 'Probox', 'Fielder', 'Hilux', 'Land Cruiser', 'Premio', 'Axio', 'Vitz', 'RAV4', 'Wish'],
             'Nissan': ['Note', 'X-Trail', 'Navara', 'March', 'Juke', 'Tiida', 'Dualis', 'Sunny'],
@@ -57,7 +61,7 @@
             'Subaru': ['Impreza', 'Forester', 'Legacy', 'Outback', 'XV'],
             'Isuzu': ['D-Max', 'NPR', 'NQR', 'Elf'],
             'Suzuki': ['Swift', 'Alto', 'Escudo', 'Wagon R'],
-            'Volkswagen': ['Golf', 'Polo', 'Passat', 'Tiguan', 'Touareg', 'Jetta', 'Transporter', 'Amarok', 'Beetle', 'Sharan', 'Touran', 'Caddy'],
+            'Volkswagen': ['Golf', 'Polo', 'Passat', 'Tiguan', 'Touareg', 'Touaran' , 'Jetta', 'Transporter', 'Amarok', 'Beetle', 'Sharan', 'Touran', 'Caddy'],
             'Porsche': ['Cayenne', 'Macan', 'Panamera', '911', 'Boxster', 'Taycan', '718', 'Cayman'],
             'Mercedes-Benz': ['C-Class', 'E-Class', 'Actros', 'Sprinter'],
             'BMW': ['3 Series', '5 Series', 'X3', 'X5'],
@@ -84,16 +88,56 @@
         });
         </script>
         <div class="mb-3">
+            <label class="form-label">Plate Number</label>
+            <input type="text" name="plate" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Vehicle Model</label>
+            <select name="model" id="vehicle-model" class="form-control mb-2" onchange="toggleCustomModel()" required>
+                <option value="">Select Model</option>
+                <option value="Corolla">Corolla</option>
+                <option value="Hilux">Hilux</option>
+                <option value="Vitz">Vitz</option>
+                <option value="Fielder">Fielder</option>
+                <option value="Demio">Demio</option>
+                <option value="March">March</option>
+                <option value="Note">Note</option>
+                <option value="Forester">Forester</option>
+                <option value="Impreza">Impreza</option>
+                <option value="custom">Other (Enter Manually)</option>
+            </select>
+            <input type="text" name="custom_model" id="custom-model" class="form-control" placeholder="Enter Model" style="display:none;">
+        </div>
+        <script>
+        function toggleCustomModel() {
+            var modelSelect = document.getElementById('vehicle-model');
+            var customModel = document.getElementById('custom-model');
+            if (modelSelect.value === 'custom') {
+                customModel.style.display = 'block';
+                customModel.required = true;
+                modelSelect.required = false;
+            } else {
+                customModel.style.display = 'none';
+                customModel.required = false;
+                modelSelect.required = true;
+            }
+        }
+        </script>
+        <div class="mb-3">
             <label class="form-label">VIN Number</label>
             <input type="text" name="vin_number" class="form-control">
         </div>
         <div class="mb-3">
-            <label class="form-label">Type</label>
+            <label class="form-label">Visit Category</label>
             <select name="type" class="form-control" required>
-                <option value="">Select Type</option>
-                <option value="electrical">Electrical</option>
-                <option value="mechanical">Mechanical</option>
-                <option value="service">Service</option>
+                <option value="">Select Category</option>
+                <option value="Mechanical">Mechanical</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Diagnosis">Diagnosis</option>
+                <option value="Battery">Battery</option>
+                <option value="Suspension">Suspension</option>
+                <option value="Service">Service</option>
+                <option value="Other">Other</option>
             </select>
         </div>
 

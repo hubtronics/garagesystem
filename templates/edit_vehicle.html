@@ -29,12 +29,16 @@
             <input type="text" name="vin_number" class="form-control" value="{{ vehicle.vin_number }}">
         </div>
         <div class="mb-3">
-            <label class="form-label">Type</label>
+            <label class="form-label">Visit Category</label>
             <select name="type" class="form-control" required>
-                <option value="">Select Type</option>
-                <option value="electrical" {% if vehicle.type == 'electrical' %}selected{% endif %}>Electrical</option>
-                <option value="mechanical" {% if vehicle.type == 'mechanical' %}selected{% endif %}>Mechanical</option>
-                <option value="service" {% if vehicle.type == 'service' %}selected{% endif %}>Service</option>
+                <option value="">Select Category</option>
+                <option value="Mechanical" {% if vehicle.type == 'Mechanical' %}selected{% endif %}>Mechanical</option>
+                <option value="Electrical" {% if vehicle.type == 'Electrical' %}selected{% endif %}>Electrical</option>
+                <option value="Diagnosis" {% if vehicle.type == 'Diagnosis' %}selected{% endif %}>Diagnosis</option>
+                <option value="Battery" {% if vehicle.type == 'Battery' %}selected{% endif %}>Battery</option>
+                <option value="Suspension" {% if vehicle.type == 'Suspension' %}selected{% endif %}>Suspension</option>
+                <option value="Service" {% if vehicle.type == 'Service' %}selected{% endif %}>Service</option>
+                <option value="Other" {% if vehicle.type == 'Other' %}selected{% endif %}>Other</option>
             </select>
         </div>
         <div class="mb-3">
