@@ -324,7 +324,7 @@ def vehicle_report(vehicle_id):
     p.setFont('Helvetica-Bold', 18)
     p.drawString(160, y-20, "POWERTUNE AUTO GARAGE")
     p.setFont('Helvetica', 10)
-    p.drawString(160, y-38, "Nairobi, Kenya | Tel: 0712 345678 | Email: info@powertune.co.ke")
+    p.drawString(160, y-38, "Nairobi, Kenya | Tel: 0748 638225 | Email: info@powertune.co.ke")
     y -= 70
 
     # Vehicle and customer details
