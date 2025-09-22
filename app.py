@@ -111,12 +111,12 @@ def login():
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
-            session['user_id'] = user.id
             session['username'] = user.username
+            session['user_id'] = user.id
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
         else:
-            flash('Invalid username or password.', 'danger')
+            flash('Incorrect username or password.', 'danger')
     return render_template('login.html')
 
 @app.route('/logout')
