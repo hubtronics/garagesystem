@@ -6,6 +6,7 @@ from flask import send_file
 import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
@@ -58,6 +59,21 @@ class Customer(db.Model):
     phone = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(100), nullable=False)
 
+class ServiceVisit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'), nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    notes = db.Column(db.String(255))
+    visit_type = db.Column(db.String(100))  # e.g., Service, Battery Change, etc.
+    labour = db.Column(db.Float, default=0.0)
+    items = db.relationship('ServiceItem', backref='visit', lazy=True)
+
+class ServiceItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    visit_id = db.Column(db.Integer, db.ForeignKey('service_visit.id'), nullable=False)
+    item_name = db.Column(db.String(100), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    price = db.Column(db.Float, nullable=False, default=0.0)
 
 # Create default admin and initialize DB at startup
 def create_admin():
@@ -134,20 +150,8 @@ def vehicles():
 @login_required
 def vehicle_detail(vehicle_id):
     v = Vehicle.query.get_or_404(vehicle_id)
-    if request.method == 'POST':
-        from datetime import datetime
-        date = request.form['date']
-        description = request.form['description']
-        technician = request.form['technician']
-        new_record = VehicleHistory(vehicle_id=vehicle_id, date=date, description=description, technician=technician, timestamp=datetime.now())
-        db.session.add(new_record)
-        db.session.commit()
-        flash('New record added to vehicle history!', 'success')
-        return redirect(url_for('vehicle_detail', vehicle_id=vehicle_id))
-    # Get all history entries for this vehicle, ordered by date descending
-    history_entries = VehicleHistory.query.filter_by(vehicle_id=vehicle_id).order_by(VehicleHistory.date.desc()).all()
-    quotes = []  # Placeholder for quotes, to be implemented
-    return render_template('vehicle_detail.html', vehicle=v, quotes=quotes, history_entries=history_entries)
+    visits = ServiceVisit.query.filter_by(vehicle_id=vehicle_id).order_by(ServiceVisit.date.desc()).all()
+    return render_template('vehicle_detail.html', vehicle=v, visits=visits)
 
 @app.route('/vehicles/add', methods=['GET', 'POST'])
 @login_required
@@ -347,6 +351,58 @@ def vehicle_report(vehicle_id):
     p.save()
     buffer.seek(0)
     return send_file(buffer, as_attachment=True, download_name=f'vehicle_{v.plate}_report.pdf', mimetype='application/pdf')
+
+@app.route('/vehicles/<int:vehicle_id>/add_visit', methods=['GET', 'POST'])
+@login_required
+def add_visit(vehicle_id):
+    v = Vehicle.query.get_or_404(vehicle_id)
+    if request.method == 'POST':
+        notes = request.form['notes']
+        items = []
+        # Collect dynamic items from the form
+        item_names = request.form.getlist('item_name')
+        quantities = request.form.getlist('quantity')
+        prices = request.form.getlist('price')
+        visit = ServiceVisit(vehicle_id=vehicle_id, notes=notes)
+        db.session.add(visit)
+        db.session.flush()  # Get visit.id before commit
+        for name, qty, price in zip(item_names, quantities, prices):
+            if name.strip():
+                item = ServiceItem(
+                    visit_id=visit.id,
+                    item_name=name.strip(),
+                    quantity=int(qty) if qty else 1,
+                    price=float(price) if price else 0.0
+                )
+                db.session.add(item)
+        db.session.commit()
+        flash('Service visit added!', 'success')
+        return redirect(url_for('vehicle_detail', vehicle_id=vehicle_id))
+    return render_template('add_visit.html', vehicle=v)
+
+@app.route('/visit/<int:visit_id>/print')
+@login_required
+def print_visit(visit_id):
+    visit = ServiceVisit.query.get_or_404(visit_id)
+    vehicle = Vehicle.query.get_or_404(visit.vehicle_id)
+    customer = vehicle.customer
+    items = visit.items
+
+    # Calculate totals
+    parts_total = sum(item.quantity * item.price for item in items)
+    labour = visit.labour or 0
+    grand_total = parts_total + labour
+
+    return render_template(
+        'print_visit.html',
+        visit=visit,
+        vehicle=vehicle,
+        customer=customer,
+        items=items,
+        parts_total=parts_total,
+        labour=labour,
+        grand_total=grand_total
+    )
 
 if __name__ == '__main__':
     create_admin()

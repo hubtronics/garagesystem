@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Service Receipt - {{ vehicle.plate }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        .header { display: flex; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .logo { height: 60px; margin-right: 20px; }
+        .garage-details { font-size: 1.1em; }
+        .section { margin-bottom: 18px; }
+        .table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        .table th, .table td { border: 1px solid #aaa; padding: 6px 10px; text-align: left; }
+        .table th { background: #f0f0f0; }
+        .summary { font-size: 1.1em; }
+        .right { text-align: right; }
+        @media print {
+            .no-print { display: none; }
+            body { margin: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='powertune.jpg') }}" alt="Logo" class="logo">
+        <div class="garage-details">
+            <strong>POWERTUNE AUTO GARAGE</strong><br>
+            Nairobi, Kenya<br>
+            Tel: 0712 345678<br>
+            Email: info@powertune.co.ke
+        </div>
+    </div>
+    <h2 style="text-align:center;">Service Receipt</h2>
+    <div class="section">
+        <strong>Date:</strong> {{ visit.date.strftime('%Y-%m-%d %H:%M') }}<br>
+        <strong>Type:</strong> {{ visit.visit_type or 'N/A' }}<br>
+        <strong>Notes:</strong> {{ visit.notes or '-' }}
+    </div>
+    <div class="section">
+        <strong>Vehicle:</strong> {{ vehicle.name }} ({{ vehicle.plate }})<br>
+        <strong>Model:</strong> {{ vehicle.model }}<br>
+        <strong>VIN:</strong> {{ vehicle.vin_number or '-' }}
+    </div>
+    <div class="section">
+        <strong>Customer:</strong> {{ customer.name }}<br>
+        <strong>Phone:</strong> {{ customer.phone }}<br>
+        <strong>Email:</strong> {{ customer.email }}
+    </div>
+    <div class="section">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Item/Service</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.item_name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ "%.2f"|format(item.price) }}</td>
+                    <td>{{ "%.2f"|format(item.quantity * item.price) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="summary right">
+            <div>Parts Total: <strong>{{ "%.2f"|format(parts_total) }}</strong></div>
+            <div>Labour: <strong>{{ "%.2f"|format(labour) }}</strong></div>
+            <div>Grand Total: <strong>{{ "%.2f"|format(grand_total) }}</strong></div>
+        </div>
+    </div>
+    <div style="margin-top:30px; font-size:0.95em; color:#555;">
+        Thank you for choosing Powertune Auto Garage.<br>
+        <span style="font-style:italic;">Receipt generated on {{ visit.date.strftime('%Y-%m-%d %H:%M') }}</span>
+    </div>
+    <button class="no-print" onclick="window.print()" style="margin-top:20px;">Print</button>
+</body>
+</html>

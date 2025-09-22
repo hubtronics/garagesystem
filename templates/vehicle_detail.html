@@ -38,20 +38,50 @@
             </div>
         </div>
     </form>
-    <h4>Visit & Service History</h4>
-    {% if history_entries %}
-    <ul class="list-group mb-4">
-        {% for h in history_entries %}
-        <li class="list-group-item">
-            <strong>Date:</strong> {{ h.date }}<br>
-            <strong>Description:</strong> {{ h.description }}<br>
-            <strong>Technician:</strong> {{ h.technician|default('N/A') }}
-        </li>
-        {% endfor %}
-    </ul>
+    <h3 class="mt-4">Visit & Service History</h3>
+    <a href="{{ url_for('add_visit', vehicle_id=vehicle.id) }}" class="btn btn-success mb-2">Add Service Visit</a>
+    {% for visit in visits %}
+    <div class="card mb-3">
+        <div class="card-header">
+            <strong>Date:</strong> {{ visit.date.strftime('%Y-%m-%d %H:%M') }}<br>
+            <strong>Type:</strong> {{ visit.visit_type|default('N/A') }}<br>
+            <strong>Notes:</strong> {{ visit.notes }}
+            <a href="{{ url_for('print_visit', visit_id=visit.id) }}" class="btn btn-sm btn-outline-secondary float-end" target="_blank">Print</a>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set parts_total = 0 %}
+                    {% for item in visit.items %}
+                    {% set subtotal = item.quantity * item.price %}
+                    {% set parts_total = parts_total + subtotal %}
+                    <tr>
+                        <td>{{ item.item_name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.price }}</td>
+                        <td>{{ subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div>
+                <strong>Parts Total:</strong> {{ parts_total }}<br>
+                <strong>Labour:</strong> {{ visit.labour|default(0) }}<br>
+                <strong>Grand Total:</strong> {{ parts_total + (visit.labour or 0) }}
+            </div>
+        </div>
+    </div>
     {% else %}
-    <p>No visit/service history for this vehicle yet.</p>
-    {% endif %}
+    <p>No service visits recorded yet.</p>
+    {% endfor %}
     <h4>Quotes</h4>
     {% if quotes %}
     <ul>
